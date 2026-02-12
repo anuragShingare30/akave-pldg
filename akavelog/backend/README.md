@@ -123,3 +123,30 @@
 - Retry logic for O3 uploads
 - Observability (Prometheus metrics, health check)
 - Error handling + graceful shutdown
+
+
+
+
+## Resources
+
+**Project Layout** - https://github.com/golang-standards/project-layout
+
+**echo framework** - "https://echo.labstack.com/docs/quick-start"
+
+**pgx - SQL Driver** - https://github.com/jackc/pgx
+
+**tern - SQL Migrator** - https://github.com/jackc/tern
+
+**zerolog - JSON Logger** - https://github.com/rs/zerolog
+
+**newrelic -Monitoring and Observability** - "https://pkg.go.dev/github.com/newrelic/go-agent/v3@v3.40.1/newrelic"
+
+**validator** - https://github.com/go-playground/validator
+
+**koanf - Configuration Management** - https://github.com/knadh/koanf
+
+**testify - for testing** - https://github.com/stretchr/testify
+
+**taskfile** - https://taskfile.dev/
+
+**AsyncQ - queueing tasks and processing them asynchronously with workers** - https://github.com/hibiken/asynq
