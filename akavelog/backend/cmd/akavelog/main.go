@@ -7,29 +7,32 @@ import (
 
 	"github.com/akave-ai/akavelog/internal/config"
 	"github.com/akave-ai/akavelog/internal/database"
+	"github.com/akave-ai/akavelog/internal/logger"
 	"github.com/akave-ai/akavelog/internal/server"
 )
 
 func main() {
-	cfg := config.LoadApp()
-
-	// Run from backend directory so migrations path internal/database/migrations resolves.
-	baseDir, err := os.Getwd()
+	cfg, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("getwd: %v", err)
+		log.Fatalf("load config: %v", err)
 	}
-	if err := database.RunMigrations(cfg.DatabaseURL, baseDir); err != nil {
-		log.Fatalf("migrations: %v", err)
-	}
+
+	loggerService := logger.NewLoggerService(cfg.Observability)
+	log := logger.NewLoggerWithService(cfg.Observability, loggerService)
+	defer loggerService.Shutdown()
 
 	ctx := context.Background()
-	pool, err := database.NewPool(ctx, cfg.DatabaseURL)
-	if err != nil {
-		log.Fatalf("database pool: %v", err)
+	if err := database.Migrate(ctx, &log, cfg); err != nil {
+		log.Fatal().Err(err).Msg("migrate")
 	}
-	defer pool.Close()
 
-	srv := server.New(cfg, pool)
+	db, err := database.New(cfg, &log, loggerService)
+	if err != nil {
+		log.Fatal().Err(err).Msg("database")
+	}
+	defer db.Pool.Close()
+
+	srv := server.New(cfg, db.Pool)
 	if err := srv.Start(ctx); err != nil {
 		log.Printf("server exited: %v", err)
 		os.Exit(1)

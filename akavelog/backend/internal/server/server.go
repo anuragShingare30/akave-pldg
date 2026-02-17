@@ -32,12 +32,12 @@ func (b *memoryBuffer) Insert(p []byte) {
 // Server holds the Echo app and dependencies.
 type Server struct {
 	Echo   *echo.Echo
-	Config config.App
+	Config *config.Config
 }
 
 // New builds the Echo server and registers routes.
-// Caller must provide a non-nil pool (from database.NewPool).
-func New(cfg config.App, pool *pgxpool.Pool) *Server {
+// Caller must provide a non-nil pool (e.g. from database.Database.Pool).
+func New(cfg *config.Config, pool *pgxpool.Pool) *Server {
 	e := echo.New()
 	e.HideBanner = true
 	e.Use(middleware.Recover(), middleware.Logger())
@@ -76,7 +76,8 @@ func (s *Server) Start(ctx context.Context) error {
 		<-ctx.Done()
 		_ = s.Echo.Shutdown(context.Background())
 	}()
-	return s.Echo.Start(s.Config.ServerAddr)
+	addr := ":" + s.Config.Server.Port
+	return s.Echo.Start(addr)
 }
 
 // Shutdown gracefully shuts down the server.

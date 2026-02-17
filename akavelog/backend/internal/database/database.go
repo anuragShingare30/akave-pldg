@@ -2,19 +2,14 @@ package database
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
 	"net/url"
-	"path/filepath"
 	"strconv"
 	"time"
 
 	"github.com/akave-ai/akavelog/internal/config"
 	loggerConfig "github.com/akave-ai/akavelog/internal/logger"
-	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 	pgxzero "github.com/jackc/pgx-zerolog"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -121,27 +116,4 @@ func New(cfg *config.Config, logger *zerolog.Logger, loggerService *loggerConfig
 	logger.Info().Msg("connected to the database")
 
 	return database, nil
-}
-
-// RunMigrations runs all up migrations using golang-migrate. databaseURL is the Postgres connection string.
-// baseDir is the backend root (directory containing internal/database/migrations).
-func RunMigrations(databaseURL string, baseDir string) error {
-	migrationsPath := filepath.Join(baseDir, "internal", "database", "migrations")
-	m, err := migrate.New(
-		"file://"+filepath.ToSlash(migrationsPath),
-		databaseURL,
-	)
-	if err != nil {
-		return err
-	}
-	err = m.Up()
-	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		return err
-	}
-	return nil
-}
-
-// NewPool creates a pgx connection pool for the given database URL.
-func NewPool(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
-	return pgxpool.New(ctx, databaseURL)
 }
