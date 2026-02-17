@@ -84,3 +84,30 @@ func LoadConfig() (mainConfig *Config, err error) {
 
 	return
 }
+
+// App holds simple app config for the Echo server (DatabaseURL, ServerAddr).
+// Used by server.Server when running the inputs/ingest API.
+type App struct {
+	DatabaseURL string
+	ServerAddr  string
+}
+
+// DefaultApp returns defaults for local development.
+func DefaultApp() App {
+	return App{
+		DatabaseURL: "postgres://chayan:chayan@localhost:5432/akavelog?sslmode=disable",
+		ServerAddr:  ":8080",
+	}
+}
+
+// LoadApp reads App config from the environment (DATABASE_URL, SERVER_ADDR).
+func LoadApp() App {
+	app := DefaultApp()
+	if v := os.Getenv("DATABASE_URL"); v != "" {
+		app.DatabaseURL = v
+	}
+	if v := os.Getenv("SERVER_ADDR"); v != "" {
+		app.ServerAddr = v
+	}
+	return app
+}

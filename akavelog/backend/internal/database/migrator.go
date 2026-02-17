@@ -9,8 +9,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/anuragShingare30/akavelog/internal/config"
-
+	"github.com/akave-ai/akavelog/internal/config"
 	"github.com/jackc/pgx/v5"
 	tern "github.com/jackc/tern/v2/migrate"
 	"github.com/rs/zerolog"
@@ -62,6 +61,5 @@ func Migrate(ctx context.Context, logger *zerolog.Logger, cfg *config.Config) er
 		logger.Info().Msgf("migrated database schema, from %d to %d", from, len(m.Migrations))
 	}
 
-	
 	return nil
 }

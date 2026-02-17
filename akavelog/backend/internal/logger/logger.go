@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/anuragShingare30/akavelog/internal/config"
+	"github.com/akave-ai/akavelog/internal/config"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/pkgerrors"
