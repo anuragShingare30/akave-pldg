@@ -19,7 +19,6 @@ BEGIN
 END;
 $$;
 
--- Create updated_at trigger function
 CREATE OR REPLACE FUNCTION trigger_set_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -27,3 +26,8 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+---- create above / drop below ----
+
+DROP FUNCTION IF EXISTS trigger_set_updated_at();
+DROP FUNCTION IF EXISTS camel(anyelement);

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/joho/godotenv"
 	"github.com/knadh/koanf/providers/env"
 	"github.com/knadh/koanf/v2"
 	"github.com/rs/zerolog"
@@ -43,7 +44,10 @@ type DatabaseConfig struct {
 }
 
 // LoadConfig loads the configuration from environment variables using koanf.
+// If a .env file exists in the current directory, it is loaded first.
 func LoadConfig() (mainConfig *Config, err error) {
+	_ = godotenv.Load(".env") // optional; ignore if missing
+
 	logger := zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr}).With().Timestamp().Logger()
 
 	k := koanf.New(".")

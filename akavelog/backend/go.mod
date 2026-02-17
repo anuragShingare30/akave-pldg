@@ -8,6 +8,7 @@ require (
 	github.com/jackc/pgx-zerolog v0.0.0-20230315001418-f978528409eb
 	github.com/jackc/pgx/v5 v5.8.0
 	github.com/jackc/tern/v2 v2.2.0
+	github.com/joho/godotenv v1.5.1
 	github.com/knadh/koanf/providers/env v0.1.0
 	github.com/knadh/koanf/v2 v2.2.0
 	github.com/labstack/echo/v4 v4.15.0
