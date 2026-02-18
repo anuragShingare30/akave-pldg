@@ -141,6 +141,32 @@ export async function getUploadStatus(): Promise<UploadStatus> {
   return request<UploadStatus>(`${API}/logs/status`);
 }
 
+export type O3ObjectInfo = {
+  key: string;
+  size: number;
+  last_modified: string;
+};
+
+export async function getUploads(prefix?: string): Promise<{ objects: O3ObjectInfo[] }> {
+  const url = prefix ? `${API}/uploads?prefix=${encodeURIComponent(prefix)}` : `${API}/uploads`;
+  return request<{ objects: O3ObjectInfo[] }>(url);
+}
+
+export type StoredLogEntry = {
+  timestamp?: string;
+  service?: string;
+  level?: string;
+  message?: string;
+  tags?: Record<string, string>;
+  raw_request?: RawRequestData;
+};
+
+export async function getUploadContent(key: string): Promise<{ logs: StoredLogEntry[]; key: string }> {
+  return request<{ logs: StoredLogEntry[]; key: string }>(
+    `${API}/uploads/content?key=${encodeURIComponent(key)}`
+  );
+}
+
 export function getIngestUrl(path: string): string {
   const base = process.env.NEXT_PUBLIC_API_URL || '';
   return `${base || ''}/api/ingest/${path}`.replace(/\/+/g, '/');
