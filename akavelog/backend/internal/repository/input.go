@@ -98,3 +98,23 @@ func (r *InputRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.Inp
 	}
 	return &in, nil
 }
+
+// Update updates an existing input by id. Only type, title, configuration, and desired_state are updated.
+func (r *InputRepository) Update(ctx context.Context, input *model.Input) error {
+	_, err := r.pool.Exec(ctx, `
+		UPDATE inputs SET type = $1, title = $2, configuration = $3, desired_state = $4
+		WHERE id = $5`,
+		input.Type,
+		input.Title,
+		input.Configuration,
+		input.DesiredState,
+		input.ID,
+	)
+	return err
+}
+
+// Delete removes an input by id.
+func (r *InputRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	_, err := r.pool.Exec(ctx, `DELETE FROM inputs WHERE id = $1`, id)
+	return err
+}

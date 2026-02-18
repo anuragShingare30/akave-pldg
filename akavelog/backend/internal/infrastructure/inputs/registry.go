@@ -38,6 +38,20 @@ func (r *Registry) Create(name string, cfg Config, buffer InputBuffer) (MessageI
 	return factory.Create(cfg, buffer)
 }
 
+// ValidateConfig runs the factory's optional ValidateConfig before create. Returns nil if type unknown or no validator.
+func (r *Registry) ValidateConfig(typeName string, cfg Config) error {
+	r.mu.RLock()
+	factory, ok := r.factories[typeName]
+	r.mu.RUnlock()
+	if !ok {
+		return nil
+	}
+	if v, ok := factory.(interface{ ValidateConfig(Config) error }); ok {
+		return v.ValidateConfig(cfg)
+	}
+	return nil
+}
+
 // ListRegistered returns all registered input type names.
 func (r *Registry) ListRegistered() []string {
 	r.mu.RLock()

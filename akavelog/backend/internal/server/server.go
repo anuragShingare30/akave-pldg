@@ -14,6 +14,7 @@ import (
 	_ "github.com/akave-ai/akavelog/internal/infrastructure/inputs/httpinput"
 	"github.com/akave-ai/akavelog/internal/model"
 	"github.com/akave-ai/akavelog/internal/repository"
+	"github.com/akave-ai/akavelog/internal/response"
 	"github.com/akave-ai/akavelog/internal/storage"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -93,11 +94,12 @@ func New(cfg *config.Config, pool *pgxpool.Pool) *Server {
 	ingestD := NewIngestDispatcher()
 
 	inputHandler := &handler.InputHandler{
-		Registry:    inputs.GlobalRegistry,
-		Buffer:      buf,
-		InputRepo:   repository.NewInputRepository(pool),
-		Instances:   make(map[uuid.UUID]handler.InstanceRecord),
-		MountIngest: ingestD.Mount,
+		Registry:      inputs.GlobalRegistry,
+		Buffer:        buf,
+		InputRepo:     repository.NewInputRepository(pool),
+		Instances:     make(map[uuid.UUID]handler.InstanceRecord),
+		MountIngest:   ingestD.Mount,
+		UnmountIngest: ingestD.Unmount,
 	}
 
 	// Management API
@@ -106,23 +108,30 @@ func New(cfg *config.Config, pool *pgxpool.Pool) *Server {
 	e.GET("/inputs/info", inputHandler.GetAllTypesInfo)
 	e.GET("/inputs", inputHandler.ListInputs)
 	e.POST("/inputs", inputHandler.CreateInput)
+	e.PUT("/inputs/:id", inputHandler.UpdateInput)
+	e.DELETE("/inputs/:id", inputHandler.DeleteInput)
 
-	// Ingest: any path under /ingest is dispatched by path
-	e.Any("/ingest/*", echo.WrapHandler(ingestD))
+	// Ingest: GET returns recent logs (raw HTTP, same response shape); POST/PUT etc. dispatch to path handler
+	e.Any("/ingest/*", func(c echo.Context) error {
+		if c.Request().Method == "GET" {
+			return response.OK(c, map[string]any{"logs": recentLogs.GetRecent()}, "")
+		}
+		return echo.WrapHandler(ingestD)(c)
+	})
 
 	// Demo UI: recent logs and upload status
 	e.GET("/logs/recent", func(c echo.Context) error {
-		return c.JSON(200, map[string]any{"logs": recentLogs.GetRecent()})
+		return response.OK(c, map[string]any{"logs": recentLogs.GetRecent()}, "")
 	})
 	e.GET("/logs/status", func(c echo.Context) error {
 		st := uploadStatus.Get()
-		return c.JSON(200, map[string]any{
+		return response.OK(c, map[string]any{
 			"batcher_enabled":  st.BatcherOn,
 			"last_upload_at":   st.LastAt,
 			"last_upload_key":  st.LastKey,
 			"last_upload_count": st.LastCount,
 			"pending_count":    st.Pending,
-		})
+		}, "")
 	})
 
 	inputHandler.RestoreInputs(context.Background())

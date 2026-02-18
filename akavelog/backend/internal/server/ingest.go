@@ -34,6 +34,19 @@ func (d *IngestDispatcher) Mount(path string, h http.Handler) {
 	d.handlers[path] = h
 }
 
+// Unmount removes the handler for the given path.
+func (d *IngestDispatcher) Unmount(path string) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if path == "" {
+		path = "/"
+	}
+	if path[0] != '/' {
+		path = "/" + path
+	}
+	delete(d.handlers, path)
+}
+
 // ServeHTTP strips the /ingest prefix and dispatches to the registered handler.
 func (d *IngestDispatcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
