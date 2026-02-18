@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import {
   createInput,
   deleteInput,
@@ -208,7 +209,12 @@ export default function DemoPage() {
       {/* Main content */}
       <div className="flex-1 flex flex-col gap-4 min-w-0">
         <header className="border-b border-[var(--border)] pb-2">
-          <h1 className="text-xl font-semibold text-[var(--accent)]">Akavelog Demo</h1>
+          <div className="flex items-center gap-4 flex-wrap">
+            <h1 className="text-xl font-semibold text-[var(--accent)]">Akavelog Demo</h1>
+            <Link href="/uploads" className="text-sm text-[var(--muted)] hover:text-[var(--accent)]">
+              View O3 uploads →
+            </Link>
+          </div>
           <p className="text-sm text-[var(--muted)]">Create HTTP input, send logs, watch uploads to Akave O3</p>
         </header>
 

@@ -38,7 +38,8 @@ func (b *memoryBuffer) Insert(p []byte) {
 type Server struct {
 	Echo           *echo.Echo
 	Config         *config.Config
-	batcher        *batcher.Batcher // optional; stopped on Shutdown
+	batcher        *batcher.Batcher   // optional; stopped on Shutdown
+	o3Client       *storage.O3Client // optional; for listing uploads
 	recentLogs     *RecentLogsStore
 	uploadStatus   *UploadStatusStore
 }
@@ -55,10 +56,13 @@ func New(cfg *config.Config, pool *pgxpool.Pool) *Server {
 
 	var buf inputs.InputBuffer
 	var b *batcher.Batcher
+	var o3Client *storage.O3Client
 	if cfg.Storage != nil && cfg.Storage.O3 != nil {
-		o3Client, err := storage.NewO3Client(cfg.Storage.O3)
+		var err error
+		o3Client, err = storage.NewO3Client(cfg.Storage.O3)
 		if err != nil {
 			log.Printf("[server] O3 client: %v (using in-memory buffer)", err)
+			o3Client = nil
 		}
 		if o3Client != nil {
 			if err := o3Client.EnsureBucket(context.Background()); err != nil {
@@ -134,13 +138,45 @@ func New(cfg *config.Config, pool *pgxpool.Pool) *Server {
 		}, "")
 	})
 
+	// List objects uploaded to O3 (log batches)
+	e.GET("/uploads", func(c echo.Context) error {
+		if o3Client == nil {
+			return response.OK(c, map[string]any{"objects": []interface{}{}}, "O3 not configured")
+		}
+		prefix := c.QueryParam("prefix")
+		if prefix == "" {
+			prefix = "logs/"
+		}
+		list, err := o3Client.ListObjects(c.Request().Context(), prefix)
+		if err != nil {
+			return response.InternalError(c, "list uploads failed", err.Error())
+		}
+		return response.OK(c, map[string]any{"objects": list}, "")
+	})
+
+	// Get stored logs from a single batch object (gzip JSON by key)
+	e.GET("/uploads/content", func(c echo.Context) error {
+		if o3Client == nil {
+			return response.BadRequest(c, "O3 not configured", "O3 not configured")
+		}
+		key := c.QueryParam("key")
+		if key == "" {
+			return response.BadRequest(c, "missing key", "query param key is required")
+		}
+		logs, err := o3Client.GetObjectLogs(c.Request().Context(), key)
+		if err != nil {
+			return response.InternalError(c, "get upload content failed", err.Error())
+		}
+		return response.OK(c, map[string]any{"logs": logs, "key": key}, "")
+	})
+
 	inputHandler.RestoreInputs(context.Background())
 
 	types := inputs.GlobalRegistry.ListRegistered()
 	sort.Strings(types)
 	log.Printf("Registered input types: %v", types)
 
-	return &Server{Echo: e, Config: cfg, batcher: b, recentLogs: recentLogs, uploadStatus: uploadStatus}
+	return &Server{Echo: e, Config: cfg, batcher: b, o3Client: o3Client, recentLogs: recentLogs, uploadStatus: uploadStatus}
 }
 
 // Start starts the HTTP server. Blocks until the context is cancelled or the server fails.
